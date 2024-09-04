@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-//send token to checksum contract address directly
+//
 //send eth directly
 
 interface IERC20 {
