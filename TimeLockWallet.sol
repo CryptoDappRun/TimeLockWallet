@@ -2,13 +2,12 @@
 pragma solidity ^0.8.0;
 //
 //send eth directly
-
+// lite version
 interface IERC20 {
     function transfer(address recipient, uint256 amount) external returns (bool);
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
     function decimals() external view returns (uint8);
-    function allowance(address owner, address spender) external view returns (uint256);
 }
 
 contract TimeLockedWallet {
@@ -28,10 +27,7 @@ contract TimeLockedWallet {
         _;
     }
 
-    event DepositedETH(address indexed sender, uint256 amount);
-    event WithdrawnETH(address indexed owner, uint256 amount);
-    event DepositedToken(address indexed token, address indexed sender, uint256 amount);
-    event WithdrawnToken(address indexed token, address indexed owner, uint256 amount);
+
 
     constructor(uint256 _lockPeriodDays, uint256 _withdrawETHWeiAmount, uint256 _withdrawTokenAmount) {
         owner = msg.sender;
@@ -43,20 +39,14 @@ contract TimeLockedWallet {
     }
 
     receive() external payable {
-        emit DepositedETH(msg.sender, msg.value);
+
     }
 
     function depositToken(address token, uint256 amount) external {
-        IERC20 tokenContract = IERC20(token);
-        uint8 tokenDecimals = tokenContract.decimals();
-        uint256 amountAdjusted = amount * (10 ** tokenDecimals);
-        
-        uint256 allowance = tokenContract.allowance(msg.sender, address(this));
-        require(allowance >= amountAdjusted, "Check the token allowance");
-        
-        require(tokenContract.transferFrom(msg.sender, address(this), amountAdjusted), "Token transfer failed");
-        
-        emit DepositedToken(token, msg.sender, amountAdjusted);
+    	//increase allowance amount of token on current contract before deposit token.
+        IERC20 tokenContract = IERC20(token);        
+        require(tokenContract.transferFrom(msg.sender, address(this), amount), "Token transfer failed");        
+    
     }
 
 
@@ -64,7 +54,7 @@ contract TimeLockedWallet {
         require(address(this).balance >= WITHDRAWETH_WEI_AMOUNT, "Insufficient ETH balance");
         payable(owner).transfer(WITHDRAWETH_WEI_AMOUNT);
         lastWithdrawDate = block.timestamp;
-        emit WithdrawnETH(owner, WITHDRAWETH_WEI_AMOUNT);
+
     }
 
     function withdrawToken(address token) external onlyOwner canWithdraw {
@@ -75,7 +65,7 @@ contract TimeLockedWallet {
         require(tokenContract.balanceOf(address(this)) >= withdrawAmountAdjusted, "Insufficient token balance");
         require(tokenContract.transfer(owner, withdrawAmountAdjusted), "Token transfer failed");
         lastWithdrawDate = block.timestamp;
-        emit WithdrawnToken(token, owner, withdrawAmountAdjusted);
+    
     }
 
 
